@@ -1,0 +1,19 @@
+# Datasets
+BCCD-4
+data.names
+
+# Results
+inference/image/*
+inference/output/*
+runs
+
+# Python
+__pycache__
+
+# Parameters
+*.pt
+
+# Dependencies
+mish-cuda
+pytorch_wavelets
+
