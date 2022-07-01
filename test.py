@@ -22,7 +22,7 @@ from models.models import *
 
 def load_classes(path):
     # Loads *.names file at 'path'
-    with open(path, 'r') as f:
+    with open(path, 'r', encoding='utf-8') as f:
         names = f.read().split('\n')
     return list(filter(None, names))  # filter removes empty strings (such as last line)
 
@@ -79,7 +79,7 @@ def test(data,
     # Configure
     model.eval()
     is_coco = data.endswith('coco.yaml')  # is COCO dataset
-    with open(data) as f:
+    with open(data, encoding='utf-8') as f:
         data = yaml.load(f, Loader=yaml.FullLoader)  # model dict
     check_dataset(data)  # check
     nc = 1 if single_cls else int(data['nc'])  # number of classes
@@ -155,7 +155,7 @@ def test(data,
                 for *xyxy, conf, cls in x:
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                    with open(save_dir / 'labels' / (path.stem + '.txt'), 'a') as f:
+                    with open(save_dir / 'labels' / (path.stem + '.txt'), 'a', encoding='utf-8') as f:
                         f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
             # W&B logging
@@ -183,7 +183,9 @@ def test(data,
                     jdict.append({'image_id': image_id,
                                   'category_id': coco91class[int(p[5])] if is_coco else int(p[5]),
                                   'bbox': [round(x, 3) for x in b],
-                                  'score': round(p[4], 5)})
+                                  'score': round(p[4], 5),
+                                  'segmentation': [[0, 0]], # all segmentation informations are fixed as 0!
+                                 })
 
             # Assign all predictions as incorrect
             correct = torch.zeros(pred.shape[0], niou, dtype=torch.bool, device=device)
@@ -260,7 +262,7 @@ def test(data,
         anno_json = glob.glob('../coco/annotations/instances_val*.json')[0]  # annotations json
         pred_json = str(save_dir / f"{w}_predictions.json")  # predictions json
         print('\nEvaluating pycocotools mAP... saving %s...' % pred_json)
-        with open(pred_json, 'w') as f:
+        with open(pred_json, 'w', encoding='utf-8') as f:
             json.dump(jdict, f)
 
         try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb

@@ -74,6 +74,7 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, workers])  # number of workers
     sampler = torch.utils.data.distributed.DistributedSampler(dataset) if rank != -1 else None
+    #sampler = torch.utils.data.SequentialSampler(dataset) if rank != -1 else None
     dataloader = InfiniteDataLoader(dataset,
                                     batch_size=batch_size,
                                     num_workers=nw,
@@ -100,6 +101,7 @@ def create_dataloader9(path, imgsz, batch_size, stride, opt, hyp=None, augment=F
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, workers])  # number of workers
     sampler = torch.utils.data.distributed.DistributedSampler(dataset) if rank != -1 else None
+    #sampler = torch.utils.data.SequentialSampler(dataset) if rank != -1 else None
     dataloader = InfiniteDataLoader(dataset,
                                     batch_size=batch_size,
                                     num_workers=nw,
@@ -202,7 +204,9 @@ class LoadImages:  # for inference
         else:
             # Read image
             self.count += 1
-            img0 = cv2.imread(path)  # BGR
+            #img0 = cv2.imread(path)  # BGR
+            img_array = np.fromfile(path, np.uint8) # Change to Numpy inorder for computer to read
+            img0 = cv2.imdecode(img_array,  cv2.IMREAD_COLOR) # Read Image
             assert img0 is not None, 'Image Not Found ' + path
             print('image %g/%g %s: ' % (self.count, self.nf, path), end='')
 
@@ -287,7 +291,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
         self.img_size = img_size
 
         if os.path.isfile(sources):
-            with open(sources, 'r') as f:
+            with open(sources, 'r', encoding='utf-8') as f: ### UTF-8 for Korean
                 sources = [x.strip() for x in f.read().splitlines() if len(x.strip())]
         else:
             sources = [sources]
@@ -379,7 +383,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 if p.is_dir():  # dir
                     f += glob.glob(str(p / '**' / '*.*'), recursive=True)
                 elif p.is_file():  # file
-                    with open(p, 'r') as t:
+                    with open(p, 'r', encoding='utf-8') as t: ### UTF-8 for Korean
                         t = t.read().splitlines()
                         parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
@@ -466,13 +470,15 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                     if exclude_classes not in l[:, 0]:
                         ns += 1
                         # shutil.copy(src=self.img_files[i], dst='./datasubset/images/')  # copy image
-                        with open('./datasubset/images.txt', 'a') as f:
+                        with open('./datasubset/images.txt', 'a', encoding='utf-8') as f: ### UTF-8 for Korean
                             f.write(self.img_files[i] + '\n')
 
                 # Extract object detection boxes for a second stage classifier
                 if extract_bounding_boxes:
                     p = Path(self.img_files[i])
-                    img = cv2.imread(str(p))
+                    # img = cv2.imread(str(p))
+                    img_array = np.fromfile(str(p), np.uint8) # Change to Numpy inorder for computer to read
+                    img = cv2.imdecode(img_array,  cv2.IMREAD_COLOR) # Read Image
                     h, w = img.shape[:2]
                     for j, x in enumerate(l):
                         f = '%s%sclassifier%s%g_%g_%s' % (p.parent.parent, os.sep, os.sep, x[0], j, p.name)
@@ -523,7 +529,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 shape = exif_size(im)  # image size
                 assert (shape[0] > 9) & (shape[1] > 9), 'image size <10 pixels'
                 if os.path.isfile(label):
-                    with open(label, 'r') as f:
+                    with open(label, 'r', encoding='utf-8') as f: ### UTF-8 for Korean
                         l = np.array([x.split() for x in f.read().splitlines()], dtype=np.float32)  # labels
                 if len(l) == 0:
                     l = np.zeros((0, 5), dtype=np.float32)
@@ -662,7 +668,7 @@ class LoadImagesAndLabels9(Dataset):  # for training/testing
                 if p.is_dir():  # dir
                     f += glob.glob(str(p / '**' / '*.*'), recursive=True)
                 elif p.is_file():  # file
-                    with open(p, 'r') as t:
+                    with open(p, 'r', encoding='utf-8') as t: ### UTF-8 for Korean
                         t = t.read().splitlines()
                         parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
@@ -749,13 +755,15 @@ class LoadImagesAndLabels9(Dataset):  # for training/testing
                     if exclude_classes not in l[:, 0]:
                         ns += 1
                         # shutil.copy(src=self.img_files[i], dst='./datasubset/images/')  # copy image
-                        with open('./datasubset/images.txt', 'a') as f:
+                        with open('./datasubset/images.txt', 'a', encoding='utf-8') as f: ### UTF-8 for Korean
                             f.write(self.img_files[i] + '\n')
 
                 # Extract object detection boxes for a second stage classifier
                 if extract_bounding_boxes:
                     p = Path(self.img_files[i])
-                    img = cv2.imread(str(p))
+                    # img = cv2.imread(str(p))
+                    img_array = np.fromfile(str(p), np.uint8) # Change to Numpy inorder for computer to read
+                    img = cv2.imdecode(img_array,  cv2.IMREAD_COLOR) # Read Image
                     h, w = img.shape[:2]
                     for j, x in enumerate(l):
                         f = '%s%sclassifier%s%g_%g_%s' % (p.parent.parent, os.sep, os.sep, x[0], j, p.name)
@@ -806,7 +814,7 @@ class LoadImagesAndLabels9(Dataset):  # for training/testing
                 shape = exif_size(im)  # image size
                 assert (shape[0] > 9) & (shape[1] > 9), 'image size <10 pixels'
                 if os.path.isfile(label):
-                    with open(label, 'r') as f:
+                    with open(label, 'r', encoding='utf-8') as f: ### UTF-8 for Korean
                         l = np.array([x.split() for x in f.read().splitlines()], dtype=np.float32)  # labels
                 if len(l) == 0:
                     l = np.zeros((0, 5), dtype=np.float32)
@@ -927,7 +935,11 @@ def load_image(self, index):
     img = self.imgs[index]
     if img is None:  # not cached
         path = self.img_files[index]
-        img = cv2.imread(path)  # BGR
+        
+        #img = cv2.imread(path)  # BGR
+        img_array = np.fromfile(path, np.uint8) # Change to Numpy inorder for computer to read
+        img = cv2.imdecode(img_array,  cv2.IMREAD_COLOR) # Read Image
+        
         assert img is not None, 'Image Not Found ' + path
         h0, w0 = img.shape[:2]  # orig hw
         r = self.img_size / max(h0, w0)  # resize image to img_size

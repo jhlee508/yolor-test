@@ -94,6 +94,8 @@ def output_to_target(output, width, height):
     targets = []
     for i, o in enumerate(output):
         if o is not None:
+            if isinstance(o, torch.Tensor): # https://github.com/WongKinYiu/yolor/issues/227
+                o = o.cpu().numpy()
             for pred in o:
                 box = pred[:4]
                 w = (box[2] - box[0]) / width
@@ -160,6 +162,8 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
             for j, box in enumerate(boxes.T):
                 cls = int(classes[j])
                 color = colors[cls % len(colors)]
+                #print("class num =",cls)
+                #print(classes)
                 cls = names[cls] if names else cls
                 if labels or conf[j] > 0.25:  # 0.25 conf thresh
                     label = '%s' % cls if labels else '%s %.1f' % (cls, conf[j])
